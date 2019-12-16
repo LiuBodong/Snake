@@ -83,6 +83,13 @@ int ChangeDirection()
 	}
 }
 
+
+//重新生成食物
+void NewFood()
+{
+
+}
+
 //蛇移动
 void SnakeMove(int direction)
 {
@@ -115,33 +122,71 @@ void SnakeMove(int direction)
 			break;
 		}
 
-		//如果前方没有食物
-		int hasFood = Snake->X == food.X && Snake->Y == food.Y;
-		if (!hasFood)
+		//TODO
+		//如果前方有墙壁则游戏结束
+		int crash = 0;
+		crash = Snake->X + x < 0 || Snake->X + x >= WIDTH || Snake->Y + y < 0 || Snake->Y + y >= HEIGHT;
+		if (!crash)
 		{
-			if (Snake)
+			//如果碰撞到自己的身体，则游戏结束
+			SnakeStruct S = Snake;
+			while (S)
 			{
-				SnakeStruct S = Snake;
-				while (S->Next)
+				if (S->X == Snake->X + x && S->Y == Snake->Y + y)
 				{
-					S->Next->X = S->X;
-					S->Next->Y = S->Y;
-					S = S->Next;
+					crash = 1;
 				}
-				Snake->X += x;
-				Snake->Y += y;
+				S = S->Next;
+			}
+		}
+		
+		if (!crash && Snake)
+		{
+			//如果前方没有食物
+			int hasFood = Snake->X + x == food.X && Snake->Y + y == food.Y;
+			if (!hasFood)
+			{
+				if (Snake)
+				{
+					SnakeStruct S = Snake;
+					int currentX = S->X; //当前节点的X坐标
+					int currentY = S->Y; //当前节点的Y坐标
+					int nextX; //下一个节点的X坐标
+					int nextY; //下一个节点的Y坐标
+					while (S->Next)
+					{
+						nextX = S->Next->X;
+						nextY = S->Next->Y;
+						S->Next->X = currentX;
+						S->Next->Y = currentY;
+						S = S->Next;
+						currentX = nextX;
+						currentY = nextY;
+					}
+					Snake->X += x;
+					Snake->Y += y;
+				}
+				else
+				{
+					//Game Over
+				}
+			}
+			else //前方有食物
+			{
+				SnakeStruct NewHead = (SnakeStruct)malloc(sizeof(struct _Snake));
+				if (NewHead)
+				{
+					NewHead->X = Snake->X + x;
+					NewHead->Y = Snake->Y + y;
+					NewHead->Next = Snake;
+					Snake = NewHead;
+				}
+				NewFood();
 			}
 		}
 		else
 		{
-			SnakeStruct NewHead = (SnakeStruct)malloc(sizeof(struct _Snake));
-			if (NewHead)
-			{
-				NewHead->X = Snake->X + x;
-				NewHead->Y = Snake->Y + y;
-				NewHead->Next = Snake;
-				Snake = NewHead;
-			}
+			//Game Over
 		}
 		SnakeDirection = direction;
 	}
@@ -153,11 +198,6 @@ void DrawFood()
 	DrawPosition(food.X, food.Y, GREEN);
 }
 
-//重新生成食物
-void NewFood()
-{
-
-}
 
 int main()
 {
@@ -199,6 +239,9 @@ int main()
 	DrawFood();
 	Sleep(1000);
 	SnakeMove(RIGHT);
+	DrawSnake();
+	DrawFood();
+	SnakeMove(DOWN);
 	DrawSnake();
 	DrawFood();
 	_getch();
